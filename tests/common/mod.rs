@@ -1,2 +1,2 @@
-mod fixtures;
-mod sub_division;
+pub mod fixtures;
+pub mod sub_division;
