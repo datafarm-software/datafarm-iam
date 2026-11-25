@@ -3,7 +3,10 @@ use common::*;
 
 use sqlx::PgPool;
 
-#[sqlx::test(fixtures("nodes", "users", "grants", "devices"))]
+#[sqlx::test(
+    migrations = "../migrations",
+    fixtures("nodes", "users", "grants", "devices")
+)]
 async fn test_access_restrictions(pool: PgPool) -> sqlx::Result<()> {
     let mut conn = pool.acquire().await?;
     // Create Sub Division's node

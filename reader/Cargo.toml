@@ -1,0 +1,13 @@
+[package]
+name = "iam-reader"
+version = "0.1.0"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "Read-only client for DataFarm services to authenticate and identify users."
+exclude = ["tests/"]
+
+[dependencies]
+sqlx = { workspace = true }
+uuid = { workspace = true }
