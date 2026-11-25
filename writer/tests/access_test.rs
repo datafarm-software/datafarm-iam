@@ -1,5 +1,6 @@
 mod common;
 use common::*;
+use iam_reader::IamReader;
 
 use sqlx::PgPool;
 
@@ -7,8 +8,9 @@ use sqlx::PgPool;
     migrations = "../migrations",
     fixtures("nodes", "users", "grants", "devices")
 )]
-async fn test_access_restrictions(pool: PgPool) -> sqlx::Result<()> {
+async fn test_access_restrictions(pool: PgPool) -> Result<(), Box<dyn std::error::Error>> {
     let mut conn = pool.acquire().await?;
+    let reader = IamReader::new(pool).await?;
     // Create Sub Division's node
     sqlx::query("INSERT INTO iam.nodes (id, parent_id, name, tags) VALUES ($1, $2, $3, $4)")
         .bind(sub_division::node::SUB_DIVISION)
@@ -38,35 +40,19 @@ async fn test_access_restrictions(pool: PgPool) -> sqlx::Result<()> {
 
     // Assert everyone has access to device, except Dan because no grant yet.
     {
-        let device_ids: Vec<String> =
-            sqlx::query_scalar("SELECT device_id FROM iam_api_v1.accessible_devices($1)")
-                .bind(fixtures::user::DF_USER)
-                .fetch_all(conn.as_mut())
-                .await?;
+        let device_ids: Vec<String> = reader.accessible_devices(fixtures::user::DF_USER).await?;
         assert_eq!(device_ids, vec![fixtures::device::DEV_1001]);
     }
     {
-        let device_ids: Vec<String> =
-            sqlx::query_scalar("SELECT device_id FROM iam_api_v1.accessible_devices($1)")
-                .bind(fixtures::user::BOB)
-                .fetch_all(conn.as_mut())
-                .await?;
+        let device_ids: Vec<String> = reader.accessible_devices(fixtures::user::BOB).await?;
         assert_eq!(device_ids, vec![fixtures::device::DEV_1001]);
     }
     {
-        let device_ids: Vec<String> =
-            sqlx::query_scalar("SELECT device_id FROM iam_api_v1.accessible_devices($1)")
-                .bind(fixtures::user::TOM)
-                .fetch_all(conn.as_mut())
-                .await?;
+        let device_ids: Vec<String> = reader.accessible_devices(fixtures::user::TOM).await?;
         assert_eq!(device_ids, vec![fixtures::device::DEV_1001]);
     }
     {
-        let device_ids: Vec<String> =
-            sqlx::query_scalar("SELECT device_id FROM iam_api_v1.accessible_devices($1)")
-                .bind(sub_division::user::DAN)
-                .fetch_all(conn.as_mut())
-                .await?;
+        let device_ids: Vec<String> = reader.accessible_devices(sub_division::user::DAN).await?;
         assert!(
             device_ids.is_empty(),
             "expected no accessible devices, got {device_ids:?}"
@@ -85,20 +71,12 @@ async fn test_access_restrictions(pool: PgPool) -> sqlx::Result<()> {
     .await?;
     {
         // Assert Dan now has access
-        let device_ids: Vec<String> =
-            sqlx::query_scalar("SELECT device_id FROM iam_api_v1.accessible_devices($1)")
-                .bind(sub_division::user::DAN)
-                .fetch_all(conn.as_mut())
-                .await?;
+        let device_ids: Vec<String> = reader.accessible_devices(sub_division::user::DAN).await?;
         assert_eq!(device_ids, vec![fixtures::device::DEV_1001]);
     }
     {
         // Assert DF User still has access
-        let device_ids: Vec<String> =
-            sqlx::query_scalar("SELECT device_id FROM iam_api_v1.accessible_devices($1)")
-                .bind(fixtures::user::DF_USER)
-                .fetch_all(conn.as_mut())
-                .await?;
+        let device_ids: Vec<String> = reader.accessible_devices(fixtures::user::DF_USER).await?;
         assert_eq!(device_ids, vec![fixtures::device::DEV_1001]);
     }
     Ok(())

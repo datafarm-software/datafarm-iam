@@ -17,7 +17,7 @@ impl IamReader {
         let mut conn = self.pool.acquire().await?;
         let device_ids: Vec<String> =
             sqlx::query_scalar("SELECT device_id FROM iam_api_v1.accessible_devices($1)")
-                .bind(user_id.to_string())
+                .bind(user_id)
                 .fetch_all(conn.as_mut())
                 .await?;
         Ok(device_ids)

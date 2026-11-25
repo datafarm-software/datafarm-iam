@@ -11,4 +11,4 @@ exclude = ["tests/"]
 [dependencies]
 sqlx = { workspace = true }
 uuid = { workspace = true }
-thiserror = "2"
+thiserror = { workspace = true }

@@ -449,6 +449,7 @@ version = "0.1.0"
 dependencies = [
  "iam-reader",
  "sqlx",
+ "thiserror",
  "uuid",
 ]
 

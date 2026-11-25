@@ -11,3 +11,4 @@ repository = "https://github.com/datafarm-software/datafarm-iam"
 [workspace.dependencies]
 sqlx = { version = "0.9", default-features = false, features = ["postgres", "uuid", "chrono"] }
 uuid = { version = "1", features = ["serde"] }
+thiserror = "2"

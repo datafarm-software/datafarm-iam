@@ -9,6 +9,7 @@ license.workspace = true
 [dependencies]
 sqlx = { workspace = true, features = ["runtime-tokio", "migrate", "macros", "json"] }
 uuid = { workspace = true }
+thiserror = { workspace = true }
 
 [dev-dependencies]
 iam-reader = { path = "../reader" }
