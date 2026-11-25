@@ -10,7 +10,7 @@ use sqlx::PgPool;
 )]
 async fn test_access_restrictions(pool: PgPool) -> Result<(), Box<dyn std::error::Error>> {
     let mut conn = pool.acquire().await?;
-    let reader = IamReader::new(pool).await?;
+    let reader = IamReader::new(common::reader_pool(&pool).await).await?;
     // Create Sub Division's node
     sqlx::query("INSERT INTO iam.nodes (id, parent_id, name, tags) VALUES ($1, $2, $3, $4)")
         .bind(sub_division::node::SUB_DIVISION)
