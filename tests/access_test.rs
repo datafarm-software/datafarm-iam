@@ -7,7 +7,8 @@ use sqlx::PgPool;
 async fn test_access_restrictions(pool: PgPool) -> sqlx::Result<()> {
     let mut conn = pool.acquire().await?;
     // Create Sub Division's node
-    sqlx::query("INSERT INTO iam.nodes (parent_id, name, tags) VALUES ($1, $2, $3)")
+    sqlx::query("INSERT INTO iam.nodes (id, parent_id, name, tags) VALUES ($1, $2, $3, $4)")
+        .bind(sub_division::node::SUB_DIVISION)
         .bind(fixtures::node::CLIENT_A)
         .bind(sub_division::node::SUB_DIVISION_NAME)
         .bind(vec![sub_division::node::SUB_DIVISION_TAG.to_owned()])
