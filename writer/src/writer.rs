@@ -1,4 +1,4 @@
-use crate::db::{Device, Grant, NewNode, NewUser, Node, UpdateUser, User};
+use crate::db::{Device, Grant, NewNode, NewUser, Node, UpdateNode, UpdateUser, User};
 use crate::error::Error;
 use sqlx::{Connection, PgPool};
 use uuid::Uuid;
@@ -26,6 +26,22 @@ impl IamWriter {
         .fetch_one(&self.pool)
         .await?;
         Ok(node_id)
+    }
+
+    pub async fn update_node(&self, n: &UpdateNode<'_>) -> Result<Node, Error> {
+        let user = sqlx::query_as::<_, Node>(
+            "UPDATE iam.nodes
+            SET name = COALESCE($2, name),
+                tags = COALESCE($3, tags)
+            WHERE id = $1
+            RETURNING id, parent_id, path::text as path, name, tags, keycloak_org_id, created_at",
+        )
+        .bind(n.id)
+        .bind(&n.name)
+        .bind(&n.tags)
+        .fetch_one(&self.pool)
+        .await?;
+        Ok(user)
     }
 
     pub async fn get_node(&self, node_id: &Uuid) -> Result<Node, Error> {
@@ -71,8 +87,8 @@ impl IamWriter {
                 email        = COALESCE($3, email),
                 home_node_id = COALESCE($4, home_node_id),
                 status       = COALESCE($5, status)
-          WHERE id = $1
-      RETURNING id, keycloak_sub, email, home_node_id, status, created_at",
+            WHERE id = $1
+            RETURNING id, keycloak_sub, email, home_node_id, status, created_at",
         )
         .bind(u.id)
         .bind(&u.keycloak_sub)

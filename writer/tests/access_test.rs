@@ -194,6 +194,7 @@ async fn test_crud_node(pool: PgPool) -> Result<(), Box<dyn std::error::Error>> 
     //Update
     let node = writer
         .update_node(&UpdateNode {
+            id: &node_id,
             name: "New Name".to_owned(),
             tags: vec!["new-tag".to_owned()],
         })

@@ -31,7 +31,8 @@ pub struct Node {
 }
 
 #[derive(Debug, Clone)]
-pub struct UpdateNode {
+pub struct UpdateNode<'a> {
+    pub id: &'a Uuid,
     pub name: String,
     pub tags: Vec<String>,
 }
