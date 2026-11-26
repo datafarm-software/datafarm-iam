@@ -1,7 +1,7 @@
 mod common;
 use common::*;
 use iam_reader::IamReader;
-use iam_writer::db::{NewNode, NewUser};
+use iam_writer::db::{Device, NewNode, NewUser};
 use iam_writer::writer::IamWriter;
 use sqlx::PgPool;
 
@@ -23,7 +23,7 @@ async fn test_access_restrictions(pool: PgPool) -> Result<(), Box<dyn std::error
         })
         .await
     {
-        Ok(nid) => nid,
+        Ok(id) => id,
         Err(e) => panic!("insert_node: {}", e),
     };
     // Create Sub Division's user
@@ -31,15 +31,16 @@ async fn test_access_restrictions(pool: PgPool) -> Result<(), Box<dyn std::error
         .insert_user(&NewUser {
             keycloak_sub: sub_division::user::DAN_SUB.to_owned(),
             email: sub_division::user::DAN_EMAIL.to_owned(),
-            home_node_id: sub_division::node::SUB_DIVISION,
+            home_node_id: Some(node_id),
         })
         .await?;
 
     // Move Device to Sub Division.
-    sqlx::query("UPDATE iam.devices SET node_id = $1 WHERE device_id = $2")
-        .bind(sub_division::node::SUB_DIVISION)
-        .bind(fixtures::device::DEV_1001)
-        .execute(conn.as_mut())
+    writer
+        .move_device(&Device {
+            device_id: fixtures::device::DEV_1001.to_owned(),
+            node_id: sub_division::node::SUB_DIVISION,
+        })
         .await?;
 
     // Assert everyone has access to device, except Dan because no grant yet.
