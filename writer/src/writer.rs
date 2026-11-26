@@ -73,9 +73,10 @@ impl IamWriter {
         Ok(user)
     }
 
-    pub async fn delete_user(&self, user_id: &Uuid) -> Result<User, Error> {
+    pub async fn deactivate_user(&self, user_id: &Uuid) -> Result<User, Error> {
         let user = sqlx::query_as::<_, User>(
-            "DELETE FROM iam.users
+            "UPDATE iam.users
+            SET status = 'disabled'
             WHERE id = $1
             RETURNING id, keycloak_sub, email, home_node_id, status, created_at",
         )
