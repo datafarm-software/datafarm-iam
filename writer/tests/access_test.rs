@@ -15,7 +15,7 @@ async fn test_access_restrictions(pool: PgPool) -> Result<(), Box<dyn std::error
     let writer = IamWriter::new(common::login_to_pool(&pool, "iam_writer").await).await?;
     let reader = IamReader::new(common::login_to_pool(&pool, "iam_reader").await).await?;
     // Create Sub Division's node
-    let node_id = match writer
+    let node_id = writer
         .insert_node(&NewNode {
             parent_id: Some(fixtures::node::CLIENT_A),
             name: sub_division::node::SUB_DIVISION_NAME.to_owned(),
@@ -23,10 +23,7 @@ async fn test_access_restrictions(pool: PgPool) -> Result<(), Box<dyn std::error
             keycloak_org_id: None,
         })
         .await
-    {
-        Ok(id) => id,
-        Err(e) => panic!("insert_node: {}", e),
-    };
+        .expect("insert should return node id");
     // Create Sub Division's user
     let user_id = writer
         .insert_user(&NewUser {
@@ -90,16 +87,14 @@ async fn test_access_restrictions(pool: PgPool) -> Result<(), Box<dyn std::error
 async fn test_crud_user(pool: PgPool) -> Result<(), Box<dyn std::error::Error>> {
     let writer = IamWriter::new(common::login_to_pool(&pool, "iam_writer").await).await?;
     //Retrieve non existent user returns Database Not Found
-    {
-        let err = writer
-            .get_user(&uuid!("12340000-0000-0000-0000-000000000001"))
-            .await
-            .expect_err("user should not exist");
-        assert!(
-            matches!(err, Error::Database(sqlx::Error::RowNotFound)),
-            "expected a not-found error, got: {err:?}"
-        );
-    }
+    let err = writer
+        .get_user(&uuid!("12340000-0000-0000-0000-000000000001"))
+        .await
+        .expect_err("user should not exist");
+    assert!(
+        matches!(err, Error::Database(sqlx::Error::RowNotFound)),
+        "expected a not-found error, got: {err:?}"
+    );
     //Create
     let user_id = writer
         .insert_user(&NewUser {
@@ -107,7 +102,8 @@ async fn test_crud_user(pool: PgPool) -> Result<(), Box<dyn std::error::Error>> 
             email: sub_division::user::DAN_EMAIL.to_owned(),
             home_node_id: fixtures::node::CLIENT_A,
         })
-        .await?;
+        .await
+        .expect("insert should return user id");
     //Retrieve
     {
         let user = writer.get_user(&user_id).await.expect("user should exist");
@@ -146,5 +142,33 @@ async fn test_crud_user(pool: PgPool) -> Result<(), Box<dyn std::error::Error>> 
     assert_eq!(user.home_node_id, fixtures::node::CLIENT_A);
     assert_eq!(user.status, UserStatus::Disabled);
 
+    Ok(())
+}
+
+#[sqlx::test(
+    migrations = "../migrations",
+    fixtures("nodes", "users", "grants", "devices")
+)]
+async fn test_crud_node(pool: PgPool) -> Result<(), Box<dyn std::error::Error>> {
+    let writer = IamWriter::new(common::login_to_pool(&pool, "iam_writer").await).await?;
+    //Retrieve non existent node returns Database Not Found
+    let err = writer
+        .get_node(&uuid!("12340000-0000-0000-0000-000000000001"))
+        .await
+        .expect_err("node should not exist");
+    assert!(
+        matches!(err, Error::Database(sqlx::Error::RowNotFound)),
+        "expected a not-found error, got: {err:?}"
+    );
+    //Create
+    let node_id = writer
+        .insert_node(&NewNode {
+            parent_id: Some(fixtures::node::CLIENT_A),
+            name: sub_division::node::SUB_DIVISION_NAME.to_owned(),
+            tags: vec![sub_division::node::SUB_DIVISION_TAG.to_owned()],
+            keycloak_org_id: None,
+        })
+        .await
+        .expect("insert should return node id");
     Ok(())
 }
