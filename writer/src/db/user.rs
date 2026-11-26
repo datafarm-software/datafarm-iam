@@ -21,11 +21,12 @@ pub struct NewUser {
 }
 
 #[derive(Debug, Clone)]
-pub struct UpdateUser {
-    pub keycloak_sub: String,
-    pub email: String,
-    pub home_node_id: Uuid,
-    pub status: UserStatus,
+pub struct UpdateUser<'a> {
+    pub id: &'a Uuid,
+    pub keycloak_sub: Option<String>,
+    pub email: Option<String>,
+    pub home_node_id: Option<Uuid>,
+    pub status: Option<UserStatus>,
 }
 
 /// A full row of iam.users, as returned by `INSERT ... RETURNING` or a SELECT.

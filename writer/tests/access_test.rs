@@ -1,7 +1,7 @@
 mod common;
 use common::*;
 use iam_reader::IamReader;
-use iam_writer::db::{Device, Grant, NewNode, NewUser, UserStatus};
+use iam_writer::db::{Device, Grant, NewNode, NewUser, UpdateUser, UserStatus};
 use iam_writer::error::Error;
 use iam_writer::writer::IamWriter;
 use sqlx::PgPool;
@@ -109,11 +109,31 @@ async fn test_crud_user(pool: PgPool) -> Result<(), Box<dyn std::error::Error>> 
         })
         .await?;
     //Retrieve
-    let user = writer.get_user(&user_id).await.expect("user should exist");
-    assert_eq!(user.id, user_id);
-    assert_eq!(user.keycloak_sub, sub_division::user::DAN_SUB);
-    assert_eq!(user.email, sub_division::user::DAN_EMAIL);
-    assert_eq!(user.home_node_id, fixtures::node::CLIENT_A);
-    assert_eq!(user.status, UserStatus::Active);
+    {
+        let user = writer.get_user(&user_id).await.expect("user should exist");
+        assert_eq!(&user.id, &user_id);
+        assert_eq!(user.keycloak_sub, sub_division::user::DAN_SUB);
+        assert_eq!(user.email, sub_division::user::DAN_EMAIL);
+        assert_eq!(user.home_node_id, fixtures::node::CLIENT_A);
+        assert_eq!(user.status, UserStatus::Active);
+    }
+    //Update
+    {
+        let user = writer
+            .update_user(&UpdateUser {
+                id: &user_id,
+                keycloak_sub: None,
+                email: Some(fixtures::user::TOM_EMAIL.to_owned()),
+                home_node_id: None,
+                status: Some(UserStatus::Disabled),
+            })
+            .await
+            .expect("updated user should be returned.");
+        assert_eq!(&user.id, &user_id);
+        assert_eq!(user.keycloak_sub, fixtures::user::TOM_EMAIL);
+        assert_eq!(user.email, sub_division::user::DAN_EMAIL);
+        assert_eq!(user.home_node_id, fixtures::node::CLIENT_A);
+        assert_eq!(user.status, UserStatus::Disabled);
+    }
     Ok(())
 }
