@@ -1,3 +1,4 @@
+use crate::db::NewNode;
 use crate::error::Error;
 use sqlx::{Connection, PgPool};
 use uuid::Uuid;
@@ -13,12 +14,18 @@ impl IamWriter {
         Ok(Self { pool })
     }
 
-    // pub async fn insert_node(&self) -> Result<Uuid, Error> {
-    //     sqlx::query("INSERT INTO iam.nodes (parent_id, name, tags) VALUES ($1, $2, $3, $4)")
-    //         .bind(fixtures::node::CLIENT_A)
-    //         .bind(sub_division::node::SUB_DIVISION_NAME)
-    //         .bind(vec![sub_division::node::SUB_DIVISION_TAG.to_owned()])
-    //         .execute(conn.as_mut())
-    //         .await?;
-    // }
+    pub async fn insert_node(&self, n: &NewNode) -> Result<Uuid, Error> {
+        let mut conn = self.pool.acquire().await?;
+        let node_id = sqlx::query_scalar(
+            "INSERT INTO iam.nodes (parent_id, name, tags, keycloak_org_id)\
+                VALUES ($1, $2, $3, $4) RETURNING id",
+        )
+        .bind(n.parent_id)
+        .bind(&n.name)
+        .bind(&n.tags)
+        .bind(&n.org_ref)
+        .fetch_one(conn.as_mut())
+        .await?;
+        Ok(node_id)
+    }
 }

@@ -1,7 +1,8 @@
 mod common;
 use common::*;
 use iam_reader::IamReader;
-
+use iam_writer::db::NewNode;
+use iam_writer::writer::IamWriter;
 use sqlx::PgPool;
 
 #[sqlx::test(
@@ -10,15 +11,21 @@ use sqlx::PgPool;
 )]
 async fn test_access_restrictions(pool: PgPool) -> Result<(), Box<dyn std::error::Error>> {
     let mut conn = pool.acquire().await?;
+    let writer = IamWriter::new(common::login_to_pool(&pool, "iam").await).await?;
     let reader = IamReader::new(common::login_to_pool(&pool, "iam_reader").await).await?;
     // Create Sub Division's node
-    sqlx::query("INSERT INTO iam.nodes (id, parent_id, name, tags) VALUES ($1, $2, $3, $4)")
-        .bind(sub_division::node::SUB_DIVISION)
-        .bind(fixtures::node::CLIENT_A)
-        .bind(sub_division::node::SUB_DIVISION_NAME)
-        .bind(vec![sub_division::node::SUB_DIVISION_TAG.to_owned()])
-        .execute(conn.as_mut())
-        .await?;
+    let node_id = match writer
+        .insert_node(&NewNode {
+            parent_id: Some(sub_division::node::SUB_DIVISION),
+            name: sub_division::node::SUB_DIVISION_NAME.to_owned(),
+            tags: vec![sub_division::node::SUB_DIVISION_TAG.to_owned()],
+            org_ref: None,
+        })
+        .await
+    {
+        Ok(nid) => nid,
+        Err(e) => panic!("insert_node: {}", e),
+    };
     // Create Sub Division's user
     sqlx::query(
         "INSERT INTO iam.users (id, keycloak_sub, email, home_node_id)\
