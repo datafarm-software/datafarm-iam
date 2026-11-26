@@ -161,7 +161,7 @@ async fn test_crud_node(pool: PgPool) -> Result<(), Box<dyn std::error::Error>> 
         "expected a not-found error, got: {err:?}"
     );
     //Create
-    let _node_id = writer
+    let node_id = writer
         .insert_node(&NewNode {
             parent_id: Some(fixtures::node::CLIENT_A),
             name: sub_division::node::SUB_DIVISION_NAME.to_owned(),
@@ -170,5 +170,26 @@ async fn test_crud_node(pool: PgPool) -> Result<(), Box<dyn std::error::Error>> 
         })
         .await
         .expect("insert should return node id");
+    //Retrieve
+    let node = writer
+        .get_node(&node_id)
+        .await
+        .expect("get should return node");
+    assert_eq!(node.id, node_id);
+    assert_eq!(node.parent_id, Some(fixtures::node::CLIENT_A));
+    assert_eq!(node.name, sub_division::node::SUB_DIVISION_NAME);
+    assert_eq!(
+        node.tags,
+        vec![sub_division::node::SUB_DIVISION_TAG.to_owned()]
+    );
+    assert_eq!(
+        node.path,
+        fixtures::ltree_path(&[
+            fixtures::node::DATAFARM,
+            fixtures::node::COMPANY_A,
+            fixtures::node::CLIENT_A,
+            node_id,
+        ])
+    );
     Ok(())
 }

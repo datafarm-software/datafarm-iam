@@ -30,7 +30,7 @@ impl IamWriter {
 
     pub async fn get_node(&self, node_id: &Uuid) -> Result<Node, Error> {
         let node = sqlx::query_as::<_, Node>(
-            "SELECT id, parent_id, path, name, tags
+            "SELECT id, parent_id, path::text as path, name, tags, keycloak_org_id, created_at
             FROM iam.nodes WHERE id = $1",
         )
         .bind(node_id)
