@@ -15,7 +15,6 @@ impl IamWriter {
     }
 
     pub async fn insert_node(&self, n: &NewNode) -> Result<Uuid, Error> {
-        let mut conn = self.pool.acquire().await?;
         let node_id = sqlx::query_scalar(
             "INSERT INTO iam.nodes (parent_id, name, tags, keycloak_org_id)\
                 VALUES ($1, $2, $3, $4) RETURNING id",
@@ -24,13 +23,12 @@ impl IamWriter {
         .bind(&n.name)
         .bind(&n.tags)
         .bind(&n.keycloak_org_id)
-        .fetch_one(conn.as_mut())
+        .fetch_one(&self.pool)
         .await?;
         Ok(node_id)
     }
 
     pub async fn insert_user(&self, u: &NewUser) -> Result<Uuid, Error> {
-        let mut conn = self.pool.acquire().await?;
         let user_id = sqlx::query_scalar(
             "INSERT INTO iam.users (keycloak_sub, email, home_node_id)\
         VALUES ($1, $2, $3) RETURNING id",
@@ -38,20 +36,19 @@ impl IamWriter {
         .bind(&u.keycloak_sub)
         .bind(&u.email)
         .bind(u.home_node_id)
-        .fetch_one(conn.as_mut())
+        .fetch_one(&self.pool)
         .await?;
         Ok(user_id)
     }
 
     pub async fn get_user(&self, user_id: &Uuid) -> Result<User, Error> {
-        let mut conn = self.pool.acquire().await?;
         let user = sqlx::query_as::<_, User>(
             "SELECT id, keycloak_sub, email, home_node_id, status, created_at
            FROM iam.users
           WHERE id = $1",
         )
         .bind(user_id)
-        .fetch_one(conn.as_mut())
+        .fetch_one(&self.pool)
         .await?;
         Ok(user)
     }
@@ -71,6 +68,18 @@ impl IamWriter {
         .bind(&u.email)
         .bind(u.home_node_id)
         .bind(u.status)
+        .fetch_one(&self.pool)
+        .await?;
+        Ok(user)
+    }
+
+    pub async fn delete_user(&self, user_id: &Uuid) -> Result<User, Error> {
+        let user = sqlx::query_as::<_, User>(
+            "DELETE FROM iam.users
+            WHERE id = $1
+            RETURNING id, keycloak_sub, email, home_node_id, status, created_at",
+        )
+        .bind(user_id)
         .fetch_one(&self.pool)
         .await?;
         Ok(user)
