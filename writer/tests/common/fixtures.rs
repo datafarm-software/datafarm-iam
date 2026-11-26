@@ -23,9 +23,6 @@ pub mod node {
     /// Tenant (org) boundaries. DataFarm has none.
     pub const COMPANY_A_ORG: &str = "seed-org-companya";
     pub const CLIENT_A_ORG: &str = "seed-org-clienta";
-
-    pub const COMPANY_A_EXTERNAL_REF: &str = "seed:companya";
-    pub const CLIENT_A_EXTERNAL_REF: &str = "seed:clienta";
 }
 
 pub mod user {
