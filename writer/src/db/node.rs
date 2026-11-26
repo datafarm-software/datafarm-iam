@@ -60,20 +60,19 @@ impl IamWriter {
         Ok(node_id)
     }
 
-    pub async fn update_node(&self, n: &UpdateNode<'_>) -> Result<Node, Error> {
-        let user = sqlx::query_as::<_, Node>(
+    pub async fn update_node(&self, n: &UpdateNode<'_>) -> Result<(), Error> {
+        let user = sqlx::query(
             "UPDATE iam.nodes
             SET name = COALESCE($2, name),
                 tags = COALESCE($3, tags)
-            WHERE id = $1
-            RETURNING id, parent_id, path::text as path, name, tags, keycloak_org_id, created_at",
+            WHERE id = $1",
         )
         .bind(n.id)
         .bind(&n.name)
         .bind(&n.tags)
-        .fetch_one(&self.pool)
+        .execute(&self.pool)
         .await?;
-        Ok(user)
+        Ok(())
     }
 
     pub async fn move_node(&self, n: &MoveNode<'_>) -> Result<Node, Error> {

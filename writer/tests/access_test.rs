@@ -119,23 +119,16 @@ async fn test_crud_user(pool: PgPool) -> Result<(), Box<dyn std::error::Error>> 
         assert_eq!(user.status, UserStatus::Active);
     }
     //Update
-    {
-        let user = writer
-            .update_user(&UpdateUser {
-                id: &user_id,
-                keycloak_sub: None,
-                email: Some(fixtures::user::TOM_EMAIL.to_owned()),
-                home_node_id: None,
-                status: None,
-            })
-            .await
-            .expect("updated user should be returned.");
-        assert_eq!(&user.id, &user_id);
-        assert_eq!(user.keycloak_sub, sub_division::user::DAN_SUB);
-        assert_eq!(user.email, fixtures::user::TOM_EMAIL);
-        assert_eq!(user.home_node_id, fixtures::node::CLIENT_A);
-        assert_eq!(user.status, UserStatus::Active);
-    }
+    writer
+        .update_user(&UpdateUser {
+            id: &user_id,
+            keycloak_sub: None,
+            email: Some(fixtures::user::TOM_EMAIL.to_owned()),
+            home_node_id: None,
+            status: None,
+        })
+        .await
+        .expect("update should return nothing if succeeded");
     //Deactivate user
     let user = writer
         .deactivate_user(&user_id)
@@ -146,7 +139,6 @@ async fn test_crud_user(pool: PgPool) -> Result<(), Box<dyn std::error::Error>> 
     assert_eq!(user.email, fixtures::user::TOM_EMAIL);
     assert_eq!(user.home_node_id, fixtures::node::CLIENT_A);
     assert_eq!(user.status, UserStatus::Disabled);
-
     Ok(())
 }
 
@@ -197,34 +189,22 @@ async fn test_crud_node(pool: PgPool) -> Result<(), Box<dyn std::error::Error>> 
         ])
     );
     //Update
-    let node = writer
+    writer
         .update_node(&UpdateNode {
             id: &node_id,
             name: "New Name".to_owned(),
             tags: vec!["new-tag".to_owned()],
         })
         .await
-        .expect("update should return node");
-    assert_eq!(node.id, node_id);
-    assert_eq!(node.parent_id, Some(fixtures::node::CLIENT_A));
-    assert_eq!(node.name, "New Name".to_owned());
-    assert_eq!(node.tags, vec!["new-tag".to_owned()]);
-    assert_eq!(
-        node.path,
-        fixtures::ltree_path(&[
-            fixtures::node::DATAFARM,
-            fixtures::node::COMPANY_A,
-            fixtures::node::CLIENT_A,
-            node_id,
-        ])
-    );
+        .expect("update should not return anything");
+
     let node = writer
         .move_node(&MoveNode {
             id: &node_id,
             parent_id: &fixtures::node::CLIENT_B,
         })
         .await
-        .expect("move should return node");
+        .expect("move should not return anything");
     assert_eq!(node.id, node_id);
     assert_eq!(node.parent_id, Some(fixtures::node::CLIENT_B));
     assert_eq!(node.name, "New Name".to_owned());

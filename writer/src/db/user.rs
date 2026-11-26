@@ -68,24 +68,23 @@ impl IamWriter {
         Ok(user)
     }
 
-    pub async fn update_user(&self, u: &UpdateUser<'_>) -> Result<User, Error> {
-        let user = sqlx::query_as::<_, User>(
+    pub async fn update_user(&self, u: &UpdateUser<'_>) -> Result<(), Error> {
+        sqlx::query(
             "UPDATE iam.users
             SET keycloak_sub = COALESCE($2, keycloak_sub),
                 email        = COALESCE($3, email),
                 home_node_id = COALESCE($4, home_node_id),
                 status       = COALESCE($5, status)
-            WHERE id = $1
-            RETURNING id, keycloak_sub, email, home_node_id, status, created_at",
+            WHERE id = $1",
         )
         .bind(u.id)
         .bind(&u.keycloak_sub)
         .bind(&u.email)
         .bind(u.home_node_id)
         .bind(u.status)
-        .fetch_one(&self.pool)
+        .execute(&self.pool)
         .await?;
-        Ok(user)
+        Ok(())
     }
 
     pub async fn deactivate_user(&self, user_id: &Uuid) -> Result<User, Error> {
