@@ -10,20 +10,25 @@ use iam_writer::db::Grant;
 use uuid::{Uuid, uuid};
 
 /// Tree: DataFarm -> CompanyA -> ClientA
+///                            |
+///                            -> Client B
 pub mod node {
     use super::*;
 
     pub const DATAFARM: Uuid = uuid!("00000000-0000-0000-0000-000000000001");
     pub const COMPANY_A: Uuid = uuid!("00000000-0000-0000-0000-000000000002");
     pub const CLIENT_A: Uuid = uuid!("00000000-0000-0000-0000-000000000003");
+    pub const CLIENT_B: Uuid = uuid!("00000000-0000-0000-0000-000000000004");
 
     pub const DATAFARM_NAME: &str = "DataFarm";
     pub const COMPANY_A_NAME: &str = "CompanyA";
     pub const CLIENT_A_NAME: &str = "ClientA";
+    pub const CLIENT_B_NAME: &str = "ClientB";
 
     /// Tenant (org) boundaries. DataFarm has none.
     pub const COMPANY_A_ORG: &str = "seed-org-companya";
     pub const CLIENT_A_ORG: &str = "seed-org-clienta";
+    pub const CLIENT_B_ORG: &str = "seed-org-clientb";
 }
 
 pub mod user {

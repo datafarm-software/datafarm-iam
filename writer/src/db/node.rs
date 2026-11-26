@@ -29,3 +29,9 @@ pub struct Node {
     pub keycloak_org_id: Option<String>,
     pub created_at: DateTime<Utc>,
 }
+
+#[derive(Debug, Clone)]
+pub struct UpdateNode {
+    pub name: String,
+    pub tags: Vec<String>,
+}

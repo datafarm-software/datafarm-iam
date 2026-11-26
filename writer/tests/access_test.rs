@@ -1,7 +1,7 @@
 mod common;
 use common::*;
 use iam_reader::IamReader;
-use iam_writer::db::{Device, Grant, NewNode, NewUser, UpdateUser, UserStatus};
+use iam_writer::db::{Device, Grant, NewNode, NewUser, UpdateNode, UpdateUser, UserStatus};
 use iam_writer::error::Error;
 use iam_writer::writer::IamWriter;
 use sqlx::PgPool;
@@ -182,6 +182,27 @@ async fn test_crud_node(pool: PgPool) -> Result<(), Box<dyn std::error::Error>> 
         node.tags,
         vec![sub_division::node::SUB_DIVISION_TAG.to_owned()]
     );
+    assert_eq!(
+        node.path,
+        fixtures::ltree_path(&[
+            fixtures::node::DATAFARM,
+            fixtures::node::COMPANY_A,
+            fixtures::node::CLIENT_A,
+            node_id,
+        ])
+    );
+    //Update
+    let node = writer
+        .update_node(&UpdateNode {
+            name: "New Name".to_owned(),
+            tags: vec!["new-tag".to_owned()],
+        })
+        .await
+        .expect("update should return node");
+    assert_eq!(node.id, node_id);
+    assert_eq!(node.parent_id, Some(fixtures::node::CLIENT_A));
+    assert_eq!(node.name, "New Name".to_owned());
+    assert_eq!(node.tags, vec!["new-tag".to_owned()]);
     assert_eq!(
         node.path,
         fixtures::ltree_path(&[
