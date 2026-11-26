@@ -1,7 +1,7 @@
 mod common;
 use common::*;
 use iam_reader::IamReader;
-use iam_writer::db::NewNode;
+use iam_writer::db::{NewNode, NewUser};
 use iam_writer::writer::IamWriter;
 use sqlx::PgPool;
 
@@ -19,7 +19,7 @@ async fn test_access_restrictions(pool: PgPool) -> Result<(), Box<dyn std::error
             parent_id: Some(sub_division::node::SUB_DIVISION),
             name: sub_division::node::SUB_DIVISION_NAME.to_owned(),
             tags: vec![sub_division::node::SUB_DIVISION_TAG.to_owned()],
-            org_ref: None,
+            keycloak_org_id: None,
         })
         .await
     {
@@ -27,16 +27,13 @@ async fn test_access_restrictions(pool: PgPool) -> Result<(), Box<dyn std::error
         Err(e) => panic!("insert_node: {}", e),
     };
     // Create Sub Division's user
-    sqlx::query(
-        "INSERT INTO iam.users (id, keycloak_sub, email, home_node_id)\
-        VALUES ($1, $2, $3, $4)",
-    )
-    .bind(sub_division::user::DAN)
-    .bind(sub_division::user::DAN_SUB)
-    .bind(sub_division::user::DAN_EMAIL)
-    .bind(sub_division::node::SUB_DIVISION)
-    .execute(conn.as_mut())
-    .await?;
+    let user_id = writer
+        .insert_user(&NewUser {
+            keycloak_sub: sub_division::user::DAN_SUB.to_owned(),
+            email: sub_division::user::DAN_EMAIL.to_owned(),
+            home_node_id: sub_division::node::SUB_DIVISION,
+        })
+        .await?;
 
     // Move Device to Sub Division.
     sqlx::query("UPDATE iam.devices SET node_id = $1 WHERE device_id = $2")

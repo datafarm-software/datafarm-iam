@@ -53,7 +53,7 @@ CREATE TABLE iam.users (
   id           uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   keycloak_sub text NOT NULL UNIQUE,
   email        text NOT NULL,
-  home_node_id uuid REFERENCES iam.nodes(id),
+  home_node_id uuid REFERENCES iam.nodes(id) NOT NULL,
   status       text NOT NULL DEFAULT 'active' CHECK (status IN ('active', 'disabled')),
   created_at   timestamptz NOT NULL DEFAULT now()
 );

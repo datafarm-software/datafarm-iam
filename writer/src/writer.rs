@@ -1,4 +1,4 @@
-use crate::db::NewNode;
+use crate::db::{NewNode, NewUser};
 use crate::error::Error;
 use sqlx::{Connection, PgPool};
 use uuid::Uuid;
@@ -23,9 +23,23 @@ impl IamWriter {
         .bind(n.parent_id)
         .bind(&n.name)
         .bind(&n.tags)
-        .bind(&n.org_ref)
+        .bind(&n.keycloak_org_id)
         .fetch_one(conn.as_mut())
         .await?;
         Ok(node_id)
+    }
+
+    pub async fn insert_user(&self, u: &NewUser) -> Result<Uuid, Error> {
+        let mut conn = self.pool.acquire().await?;
+        let user_id = sqlx::query_scalar(
+            "INSERT INTO iam.users (keycloak_sub, email, home_node_id)\
+        VALUES ($1, $2, $3) RETURNING id",
+        )
+        .bind(&u.keycloak_sub)
+        .bind(&u.email)
+        .bind(u.home_node_id)
+        .fetch_one(conn.as_mut())
+        .await?;
+        Ok(user_id)
     }
 }
