@@ -6,12 +6,12 @@
 
 #![allow(dead_code)]
 
-use iam_writer::db::Grant;
+use iam_writer::db::grant::Grant;
 use uuid::{Uuid, uuid};
 
 /// Tree: DataFarm -> CompanyA -> ClientA
 ///                            |
-///                            -> Client B
+///                            -> ClientB
 pub mod node {
     use super::*;
 

@@ -1,4 +1,9 @@
-use crate::db::{Device, Grant, NewNode, NewUser, Node, UpdateNode, UpdateUser, User};
+use crate::db::{
+    device::Device,
+    grant::Grant,
+    node::{NewNode, Node, UpdateNode},
+    user::{NewUser, UpdateUser, User},
+};
 use crate::error::Error;
 use sqlx::{Connection, PgPool};
 use uuid::Uuid;

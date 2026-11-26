@@ -1,7 +1,12 @@
 mod common;
 use common::*;
 use iam_reader::IamReader;
-use iam_writer::db::{Device, Grant, NewNode, NewUser, UpdateNode, UpdateUser, UserStatus};
+use iam_writer::db::{
+    device::Device,
+    grant::Grant,
+    node::{NewNode, UpdateNode},
+    user::{NewUser, UpdateUser, UserStatus},
+};
 use iam_writer::error::Error;
 use iam_writer::writer::IamWriter;
 use sqlx::PgPool;
