@@ -36,3 +36,9 @@ pub struct UpdateNode<'a> {
     pub name: String,
     pub tags: Vec<String>,
 }
+
+#[derive(Debug, Clone)]
+pub struct MoveNode<'a> {
+    pub id: &'a Uuid,
+    pub parent_id: &'a Uuid,
+}

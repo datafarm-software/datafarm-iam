@@ -4,7 +4,7 @@ use iam_reader::IamReader;
 use iam_writer::db::{
     device::Device,
     grant::Grant,
-    node::{NewNode, UpdateNode},
+    node::{MoveNode, NewNode, UpdateNode},
     user::{NewUser, UpdateUser, UserStatus},
 };
 use iam_writer::error::Error;
@@ -215,6 +215,26 @@ async fn test_crud_node(pool: PgPool) -> Result<(), Box<dyn std::error::Error>> 
             fixtures::node::DATAFARM,
             fixtures::node::COMPANY_A,
             fixtures::node::CLIENT_A,
+            node_id,
+        ])
+    );
+    let node = writer
+        .move_node(&MoveNode {
+            id: &node_id,
+            parent_id: &fixtures::node::CLIENT_B,
+        })
+        .await
+        .expect("move should return node");
+    assert_eq!(node.id, node_id);
+    assert_eq!(node.parent_id, Some(fixtures::node::CLIENT_B));
+    assert_eq!(node.name, "New Name".to_owned());
+    assert_eq!(node.tags, vec!["new-tag".to_owned()]);
+    assert_eq!(
+        node.path,
+        fixtures::ltree_path(&[
+            fixtures::node::DATAFARM,
+            fixtures::node::COMPANY_A,
+            fixtures::node::CLIENT_B,
             node_id,
         ])
     );
