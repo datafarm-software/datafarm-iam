@@ -1,3 +1,5 @@
+use crate::error::Error;
+use crate::writer::IamWriter;
 use chrono::{DateTime, Utc};
 use uuid::Uuid;
 
@@ -41,4 +43,67 @@ pub struct UpdateNode<'a> {
 pub struct MoveNode<'a> {
     pub id: &'a Uuid,
     pub parent_id: &'a Uuid,
+}
+
+impl IamWriter {
+    pub async fn insert_node(&self, n: &NewNode) -> Result<Uuid, Error> {
+        let node_id = sqlx::query_scalar(
+            "INSERT INTO iam.nodes (parent_id, name, tags, keycloak_org_id)\
+                VALUES ($1, $2, $3, $4) RETURNING id",
+        )
+        .bind(n.parent_id)
+        .bind(&n.name)
+        .bind(&n.tags)
+        .bind(&n.keycloak_org_id)
+        .fetch_one(&self.pool)
+        .await?;
+        Ok(node_id)
+    }
+
+    pub async fn update_node(&self, n: &UpdateNode<'_>) -> Result<Node, Error> {
+        let user = sqlx::query_as::<_, Node>(
+            "UPDATE iam.nodes
+            SET name = COALESCE($2, name),
+                tags = COALESCE($3, tags)
+            WHERE id = $1
+            RETURNING id, parent_id, path::text as path, name, tags, keycloak_org_id, created_at",
+        )
+        .bind(n.id)
+        .bind(&n.name)
+        .bind(&n.tags)
+        .fetch_one(&self.pool)
+        .await?;
+        Ok(user)
+    }
+
+    pub async fn move_node(&self, n: &MoveNode<'_>) -> Result<Node, Error> {
+        let mut tx = self.pool.begin().await?;
+        sqlx::query("SELECT iam.move_node($1, $2)")
+            .bind(n.id)
+            .bind(n.parent_id)
+            .execute(&mut *tx)
+            .await?;
+        let node = sqlx::query_as::<_, Node>(
+            "SELECT id, parent_id, path::text AS path, name, tags, keycloak_org_id, created_at
+           FROM iam.nodes
+          WHERE id = $1",
+        )
+        .bind(n.id)
+        .fetch_one(tx.as_mut())
+        .await?;
+        // TODO: insert the 'node.move' audit row here, through tx.as_mut()
+        tx.commit().await?;
+        Ok(node)
+    }
+
+    pub async fn get_node(&self, node_id: &Uuid) -> Result<Node, Error> {
+        let node = sqlx::query_as::<_, Node>(
+            "SELECT id, parent_id, path::text as path, name, tags, keycloak_org_id, created_at
+            FROM iam.nodes WHERE id = $1",
+        )
+        .bind(node_id)
+        .fetch_one(&self.pool)
+        .await?;
+        Ok(node)
+    }
 }

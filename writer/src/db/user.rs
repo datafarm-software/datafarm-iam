@@ -1,3 +1,5 @@
+use crate::error::Error;
+use crate::writer::IamWriter;
 use chrono::{DateTime, Utc};
 use uuid::Uuid;
 
@@ -38,4 +40,64 @@ pub struct User {
     pub home_node_id: Uuid,
     pub status: UserStatus,
     pub created_at: DateTime<Utc>,
+}
+
+impl IamWriter {
+    pub async fn insert_user(&self, u: &NewUser) -> Result<Uuid, Error> {
+        let user_id = sqlx::query_scalar(
+            "INSERT INTO iam.users (keycloak_sub, email, home_node_id)\
+        VALUES ($1, $2, $3) RETURNING id",
+        )
+        .bind(&u.keycloak_sub)
+        .bind(&u.email)
+        .bind(u.home_node_id)
+        .fetch_one(&self.pool)
+        .await?;
+        Ok(user_id)
+    }
+
+    pub async fn get_user(&self, user_id: &Uuid) -> Result<User, Error> {
+        let user = sqlx::query_as::<_, User>(
+            "SELECT id, keycloak_sub, email, home_node_id, status, created_at
+           FROM iam.users
+          WHERE id = $1",
+        )
+        .bind(user_id)
+        .fetch_one(&self.pool)
+        .await?;
+        Ok(user)
+    }
+
+    pub async fn update_user(&self, u: &UpdateUser<'_>) -> Result<User, Error> {
+        let user = sqlx::query_as::<_, User>(
+            "UPDATE iam.users
+            SET keycloak_sub = COALESCE($2, keycloak_sub),
+                email        = COALESCE($3, email),
+                home_node_id = COALESCE($4, home_node_id),
+                status       = COALESCE($5, status)
+            WHERE id = $1
+            RETURNING id, keycloak_sub, email, home_node_id, status, created_at",
+        )
+        .bind(u.id)
+        .bind(&u.keycloak_sub)
+        .bind(&u.email)
+        .bind(u.home_node_id)
+        .bind(u.status)
+        .fetch_one(&self.pool)
+        .await?;
+        Ok(user)
+    }
+
+    pub async fn deactivate_user(&self, user_id: &Uuid) -> Result<User, Error> {
+        let user = sqlx::query_as::<_, User>(
+            "UPDATE iam.users
+            SET status = 'disabled'
+            WHERE id = $1
+            RETURNING id, keycloak_sub, email, home_node_id, status, created_at",
+        )
+        .bind(user_id)
+        .fetch_one(&self.pool)
+        .await?;
+        Ok(user)
+    }
 }
