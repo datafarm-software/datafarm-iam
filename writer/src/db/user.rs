@@ -20,8 +20,16 @@ pub struct NewUser {
     pub home_node_id: Uuid,
 }
 
+#[derive(Debug, Clone)]
+pub struct UpdateUser {
+    pub keycloak_sub: String,
+    pub email: String,
+    pub home_node_id: Uuid,
+    pub status: UserStatus,
+}
+
 /// A full row of iam.users, as returned by `INSERT ... RETURNING` or a SELECT.
-#[derive(Debug, Clone, sqlx::FromRow)]
+#[derive(Debug, Clone, Eq, PartialEq, sqlx::FromRow)]
 pub struct User {
     pub id: Uuid,
     pub keycloak_sub: String,

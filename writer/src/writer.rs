@@ -1,4 +1,4 @@
-use crate::db::{Device, Grant, NewNode, NewUser};
+use crate::db::{Device, Grant, NewNode, NewUser, User};
 use crate::error::Error;
 use sqlx::{Connection, PgPool};
 use uuid::Uuid;
@@ -41,6 +41,19 @@ impl IamWriter {
         .fetch_one(conn.as_mut())
         .await?;
         Ok(user_id)
+    }
+
+    pub async fn get_user(&self, user_id: &Uuid) -> Result<User, Error> {
+        let mut conn = self.pool.acquire().await?;
+        let user = sqlx::query_as::<_, User>(
+            "SELECT id, keycloak_sub, email, home_node_id, status, created_at
+           FROM iam.users
+          WHERE id = $1",
+        )
+        .bind(user_id)
+        .fetch_one(conn.as_mut())
+        .await?;
+        Ok(user)
     }
 
     pub async fn move_device(&self, d: &Device) -> Result<(), Error> {

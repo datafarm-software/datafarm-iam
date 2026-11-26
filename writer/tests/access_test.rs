@@ -1,9 +1,11 @@
 mod common;
 use common::*;
 use iam_reader::IamReader;
-use iam_writer::db::{Device, Grant, NewNode, NewUser};
+use iam_writer::db::{Device, Grant, NewNode, NewUser, UserStatus};
+use iam_writer::error::Error;
 use iam_writer::writer::IamWriter;
 use sqlx::PgPool;
+use uuid::uuid;
 
 #[sqlx::test(
     migrations = "../migrations",
@@ -81,5 +83,37 @@ async fn test_access_restrictions(pool: PgPool) -> Result<(), Box<dyn std::error
         let device_ids: Vec<String> = reader.accessible_devices(fixtures::user::DF_USER).await?;
         assert_eq!(device_ids, vec![fixtures::device::DEV_1001]);
     }
+    Ok(())
+}
+
+#[sqlx::test(migrations = "../migrations", fixtures("nodes", "users"))]
+async fn test_crud_user(pool: PgPool) -> Result<(), Box<dyn std::error::Error>> {
+    let writer = IamWriter::new(common::login_to_pool(&pool, "iam_writer").await).await?;
+    //Retrieve non existent user returns Database Not Found
+    {
+        let err = writer
+            .get_user(&uuid!("12340000-0000-0000-0000-000000000001"))
+            .await
+            .expect_err("user should not exist");
+        assert!(
+            matches!(err, Error::Database(sqlx::Error::RowNotFound)),
+            "expected a not-found error, got: {err:?}"
+        );
+    }
+    //Create
+    let user_id = writer
+        .insert_user(&NewUser {
+            keycloak_sub: sub_division::user::DAN_SUB.to_owned(),
+            email: sub_division::user::DAN_EMAIL.to_owned(),
+            home_node_id: fixtures::node::CLIENT_A,
+        })
+        .await?;
+    //Retrieve
+    let user = writer.get_user(&user_id).await.expect("user should exist");
+    assert_eq!(user.id, user_id);
+    assert_eq!(user.keycloak_sub, sub_division::user::DAN_SUB);
+    assert_eq!(user.email, sub_division::user::DAN_EMAIL);
+    assert_eq!(user.home_node_id, fixtures::node::CLIENT_A);
+    assert_eq!(user.status, UserStatus::Active);
     Ok(())
 }
