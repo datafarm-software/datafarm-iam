@@ -17,7 +17,7 @@ pub enum UserStatus {
 pub struct NewUser {
     pub keycloak_sub: String,
     pub email: String,
-    pub home_node_id: Option<Uuid>,
+    pub home_node_id: Uuid,
 }
 
 /// A full row of iam.users, as returned by `INSERT ... RETURNING` or a SELECT.
@@ -26,7 +26,7 @@ pub struct User {
     pub id: Uuid,
     pub keycloak_sub: String,
     pub email: String,
-    pub home_node_id: Option<Uuid>,
+    pub home_node_id: Uuid,
     pub status: UserStatus,
     pub created_at: DateTime<Utc>,
 }

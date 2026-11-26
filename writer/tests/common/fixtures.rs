@@ -66,20 +66,20 @@ pub mod grant {
     use super::*;
 
     pub const DF_USER_ADMIN_ON_DATAFARM: Grant = Grant {
-        user: user::DF_USER,
-        node: node::DATAFARM,
+        user_id: user::DF_USER,
+        node_id: node::DATAFARM,
         role: role::ADMIN,
         granted_by: None,
     };
     pub const BOB_ADMIN_ON_COMPANY_A: Grant = Grant {
-        user: user::BOB,
-        node: node::COMPANY_A,
+        user_id: user::BOB,
+        node_id: node::COMPANY_A,
         role: role::ADMIN,
         granted_by: Some(user::DF_USER),
     };
     pub const TOM_MANAGER_ON_CLIENT_A: Grant = Grant {
-        user: user::TOM,
-        node: node::CLIENT_A,
+        user_id: user::TOM,
+        node_id: node::CLIENT_A,
         role: role::MANAGER,
         granted_by: Some(user::DF_USER),
     };

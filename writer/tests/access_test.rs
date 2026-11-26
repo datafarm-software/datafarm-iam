@@ -10,12 +10,12 @@ use sqlx::PgPool;
     fixtures("nodes", "users", "grants", "devices")
 )]
 async fn test_access_restrictions(pool: PgPool) -> Result<(), Box<dyn std::error::Error>> {
-    let writer = IamWriter::new(common::login_to_pool(&pool, "iam").await).await?;
+    let writer = IamWriter::new(common::login_to_pool(&pool, "iam_writer").await).await?;
     let reader = IamReader::new(common::login_to_pool(&pool, "iam_reader").await).await?;
     // Create Sub Division's node
     let node_id = match writer
         .insert_node(&NewNode {
-            parent_id: Some(sub_division::node::SUB_DIVISION),
+            parent_id: Some(fixtures::node::CLIENT_A),
             name: sub_division::node::SUB_DIVISION_NAME.to_owned(),
             tags: vec![sub_division::node::SUB_DIVISION_TAG.to_owned()],
             keycloak_org_id: None,
@@ -30,7 +30,7 @@ async fn test_access_restrictions(pool: PgPool) -> Result<(), Box<dyn std::error
         .insert_user(&NewUser {
             keycloak_sub: sub_division::user::DAN_SUB.to_owned(),
             email: sub_division::user::DAN_EMAIL.to_owned(),
-            home_node_id: Some(node_id),
+            home_node_id: node_id,
         })
         .await?;
 
@@ -38,7 +38,7 @@ async fn test_access_restrictions(pool: PgPool) -> Result<(), Box<dyn std::error
     writer
         .move_device(&Device {
             device_id: fixtures::device::DEV_1001.to_owned(),
-            node_id: sub_division::node::SUB_DIVISION,
+            node_id,
         })
         .await?;
 
