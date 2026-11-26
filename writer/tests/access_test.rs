@@ -161,7 +161,7 @@ async fn test_crud_node(pool: PgPool) -> Result<(), Box<dyn std::error::Error>> 
         "expected a not-found error, got: {err:?}"
     );
     //Create
-    let node_id = writer
+    let _node_id = writer
         .insert_node(&NewNode {
             parent_id: Some(fixtures::node::CLIENT_A),
             name: sub_division::node::SUB_DIVISION_NAME.to_owned(),

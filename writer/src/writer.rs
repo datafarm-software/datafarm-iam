@@ -1,4 +1,4 @@
-use crate::db::{Device, Grant, NewNode, NewUser, UpdateUser, User};
+use crate::db::{Device, Grant, NewNode, NewUser, Node, UpdateUser, User};
 use crate::error::Error;
 use sqlx::{Connection, PgPool};
 use uuid::Uuid;
@@ -26,6 +26,17 @@ impl IamWriter {
         .fetch_one(&self.pool)
         .await?;
         Ok(node_id)
+    }
+
+    pub async fn get_node(&self, node_id: &Uuid) -> Result<Node, Error> {
+        let node = sqlx::query_as::<_, Node>(
+            "SELECT id, parent_id, path, name, tags
+            FROM iam.nodes WHERE id = $1",
+        )
+        .bind(node_id)
+        .fetch_one(&self.pool)
+        .await?;
+        Ok(node)
     }
 
     pub async fn insert_user(&self, u: &NewUser) -> Result<Uuid, Error> {
