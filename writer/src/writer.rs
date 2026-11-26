@@ -1,4 +1,4 @@
-use crate::db::{Device, NewNode, NewUser};
+use crate::db::{Device, Grant, NewNode, NewUser};
 use crate::error::Error;
 use sqlx::{Connection, PgPool};
 use uuid::Uuid;
@@ -47,9 +47,24 @@ impl IamWriter {
         let mut conn = self.pool.acquire().await?;
         sqlx::query("UPDATE iam.devices SET node_id = $1 WHERE device_id = $2")
             .bind(d.node_id)
-            .bind(d.id)
+            .bind(&d.device_id)
             .execute(conn.as_mut())
             .await?;
+        Ok(())
+    }
+
+    pub async fn grant_user_access(&self, g: &Grant) -> Result<(), Error> {
+        let mut conn = self.pool.acquire().await?;
+        sqlx::query(
+            "INSERT INTO iam.grants (user_id, node_id, role, granted_by)\
+        VALUES ($1, $2, $3, $4)",
+        )
+        .bind(g.user_id)
+        .bind(g.node_id)
+        .bind(g.role)
+        .bind(g.granted_by)
+        .execute(conn.as_mut())
+        .await?;
         Ok(())
     }
 }

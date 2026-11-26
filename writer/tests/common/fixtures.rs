@@ -6,6 +6,7 @@
 
 #![allow(dead_code)]
 
+use iam_writer::db::Grant;
 use uuid::{Uuid, uuid};
 
 /// Tree: DataFarm -> CompanyA -> ClientA
@@ -63,13 +64,6 @@ pub mod role {
 /// constants here.
 pub mod grant {
     use super::*;
-
-    pub struct Grant {
-        pub user: Uuid,
-        pub node: Uuid,
-        pub role: &'static str,
-        pub granted_by: Option<Uuid>,
-    }
 
     pub const DF_USER_ADMIN_ON_DATAFARM: Grant = Grant {
         user: user::DF_USER,

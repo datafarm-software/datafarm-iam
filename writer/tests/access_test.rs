@@ -1,7 +1,7 @@
 mod common;
 use common::*;
 use iam_reader::IamReader;
-use iam_writer::db::{Device, NewNode, NewUser};
+use iam_writer::db::{Device, Grant, NewNode, NewUser};
 use iam_writer::writer::IamWriter;
 use sqlx::PgPool;
 
@@ -10,7 +10,6 @@ use sqlx::PgPool;
     fixtures("nodes", "users", "grants", "devices")
 )]
 async fn test_access_restrictions(pool: PgPool) -> Result<(), Box<dyn std::error::Error>> {
-    let mut conn = pool.acquire().await?;
     let writer = IamWriter::new(common::login_to_pool(&pool, "iam").await).await?;
     let reader = IamReader::new(common::login_to_pool(&pool, "iam_reader").await).await?;
     // Create Sub Division's node
@@ -57,26 +56,24 @@ async fn test_access_restrictions(pool: PgPool) -> Result<(), Box<dyn std::error
         assert_eq!(device_ids, vec![fixtures::device::DEV_1001]);
     }
     {
-        let device_ids: Vec<String> = reader.accessible_devices(sub_division::user::DAN).await?;
+        let device_ids: Vec<String> = reader.accessible_devices(user_id).await?;
         assert!(
             device_ids.is_empty(),
             "expected no accessible devices, got {device_ids:?}"
         )
     }
-    // Grant Sub Division access to device
-    sqlx::query(
-        "INSERT INTO iam.grants (user_id, node_id, role, granted_by)\
-        VALUES ($1, $2, $3, $4)",
-    )
-    .bind(sub_division::user::DAN)
-    .bind(sub_division::node::SUB_DIVISION)
-    .bind(fixtures::role::MEMBER)
-    .bind(fixtures::user::DF_USER)
-    .execute(conn.as_mut())
-    .await?;
+    // Grant Dan access to Sub Division devices
+    writer
+        .grant_user_access(&Grant {
+            user_id,
+            node_id,
+            role: fixtures::role::MEMBER,
+            granted_by: Some(fixtures::user::DF_USER),
+        })
+        .await?;
     {
         // Assert Dan now has access
-        let device_ids: Vec<String> = reader.accessible_devices(sub_division::user::DAN).await?;
+        let device_ids: Vec<String> = reader.accessible_devices(user_id).await?;
         assert_eq!(device_ids, vec![fixtures::device::DEV_1001]);
     }
     {
