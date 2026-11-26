@@ -130,8 +130,8 @@ async fn test_crud_user(pool: PgPool) -> Result<(), Box<dyn std::error::Error>> 
             .await
             .expect("updated user should be returned.");
         assert_eq!(&user.id, &user_id);
-        assert_eq!(user.keycloak_sub, fixtures::user::TOM_EMAIL);
-        assert_eq!(user.email, sub_division::user::DAN_EMAIL);
+        assert_eq!(user.keycloak_sub, sub_division::user::DAN_SUB);
+        assert_eq!(user.email, fixtures::user::TOM_EMAIL);
         assert_eq!(user.home_node_id, fixtures::node::CLIENT_A);
         assert_eq!(user.status, UserStatus::Disabled);
     }

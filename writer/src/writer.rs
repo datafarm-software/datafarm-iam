@@ -1,4 +1,4 @@
-use crate::db::{Device, Grant, NewNode, NewUser, User};
+use crate::db::{Device, Grant, NewNode, NewUser, UpdateUser, User};
 use crate::error::Error;
 use sqlx::{Connection, PgPool};
 use uuid::Uuid;
@@ -52,6 +52,26 @@ impl IamWriter {
         )
         .bind(user_id)
         .fetch_one(conn.as_mut())
+        .await?;
+        Ok(user)
+    }
+
+    pub async fn update_user(&self, u: &UpdateUser<'_>) -> Result<User, Error> {
+        let user = sqlx::query_as::<_, User>(
+            "UPDATE iam.users
+            SET keycloak_sub = COALESCE($2, keycloak_sub),
+                email        = COALESCE($3, email),
+                home_node_id = COALESCE($4, home_node_id),
+                status       = COALESCE($5, status)
+          WHERE id = $1
+      RETURNING id, keycloak_sub, email, home_node_id, status, created_at",
+        )
+        .bind(u.id)
+        .bind(&u.keycloak_sub)
+        .bind(&u.email)
+        .bind(u.home_node_id)
+        .bind(u.status)
+        .fetch_one(&self.pool)
         .await?;
         Ok(user)
     }
