@@ -122,7 +122,7 @@ impl IamWriter {
     }
 
     pub async fn update_grant(&self, grant: &UpdateGrant<'_>) -> Result<(), Error> {
-        sqlx::query(
+        let response = sqlx::query(
             "UPDATE iam.grants
             SET expires_at = $1
             WHERE id = $2",
@@ -131,6 +131,10 @@ impl IamWriter {
         .bind(grant.id)
         .execute(&self.pool)
         .await?;
-        Ok(())
+        match response.rows_affected() {
+            0 => Err(Error::NotFound),
+            1 => Ok(()),
+            _ => Err(Error::Conflict("updated more than 1 grant")),
+        }
     }
 }
