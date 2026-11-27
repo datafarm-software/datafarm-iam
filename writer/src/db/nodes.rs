@@ -56,7 +56,14 @@ impl IamWriter {
         .bind(&n.tags)
         .bind(&n.keycloak_org_id)
         .fetch_one(&self.pool)
-        .await?;
+        .await
+        .map_err(|e| match e {
+            sqlx::Error::Database(db) if db.is_unique_violation() => {
+                Error::Conflict("an active grant for this user, node and role exists")
+            }
+            sqlx::Error::Database(db) if db.is_foreign_key_violation() => Error::NotFound,
+            other => Error::Database(other),
+        })?;
         Ok(node_id)
     }
 
