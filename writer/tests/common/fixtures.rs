@@ -6,7 +6,6 @@
 
 #![allow(dead_code)]
 
-use iam_writer::db::grant::Grant;
 use uuid::{Uuid, uuid};
 
 /// Tree: DataFarm -> CompanyA -> ClientA
@@ -60,34 +59,6 @@ pub mod role {
     pub const ADMIN: &str = "admin";
     pub const MANAGER: &str = "manager";
     pub const MEMBER: &str = "member";
-}
-
-/// Fixture grants as (user, node, role, granted_by).
-/// grants.sql lets Postgres generate the grant ids, so tests find a grant by
-/// (user, node, role) rather than by id. If you need stable grant ids
-/// (e.g. for revoke endpoint tests), add explicit ids to grants.sql and
-/// constants here.
-pub mod grant {
-    use super::*;
-
-    pub const DF_USER_ADMIN_ON_DATAFARM: Grant = Grant {
-        user_id: user::DF_USER,
-        node_id: node::DATAFARM,
-        role: role::ADMIN,
-        granted_by: None,
-    };
-    pub const BOB_ADMIN_ON_COMPANY_A: Grant = Grant {
-        user_id: user::BOB,
-        node_id: node::COMPANY_A,
-        role: role::ADMIN,
-        granted_by: Some(user::DF_USER),
-    };
-    pub const TOM_MANAGER_ON_CLIENT_A: Grant = Grant {
-        user_id: user::TOM,
-        node_id: node::CLIENT_A,
-        role: role::MANAGER,
-        granted_by: Some(user::DF_USER),
-    };
 }
 
 // ---------------------------------------------------------------------

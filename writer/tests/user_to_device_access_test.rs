@@ -1,7 +1,12 @@
 mod common;
 use common::*;
 use iam_reader::IamReader;
-use iam_writer::db::{device::Device, grant::Grant, node::NewNode, user::NewUser};
+use iam_writer::db::{
+    devices::Device,
+    grants::{NewGrant, Role},
+    nodes::NewNode,
+    users::NewUser,
+};
 use iam_writer::writer::IamWriter;
 use sqlx::PgPool;
 
@@ -61,11 +66,12 @@ async fn test_access_restrictions(pool: PgPool) -> Result<(), Box<dyn std::error
     }
     // Grant Dan access to Sub Division devices
     writer
-        .grant_user_access(&Grant {
-            user_id,
-            node_id,
-            role: fixtures::role::MEMBER,
-            granted_by: Some(fixtures::user::DF_USER),
+        .grant_user_access(&NewGrant {
+            user_id: &user_id,
+            node_id: &node_id,
+            role: Role::Member,
+            granted_by: Some(&fixtures::user::DF_USER),
+            expires_at: None,
         })
         .await?;
     {

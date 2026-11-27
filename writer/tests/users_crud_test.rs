@@ -1,6 +1,6 @@
 mod common;
 use common::*;
-use iam_writer::db::user::{NewUser, UpdateUser, UserStatus};
+use iam_writer::db::users::{NewUser, UpdateUser, UserStatus};
 use iam_writer::error::Error;
 use iam_writer::writer::IamWriter;
 use sqlx::PgPool;

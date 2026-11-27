@@ -1,6 +1,6 @@
 mod common;
 use common::*;
-use iam_writer::db::node::{MoveNode, NewNode, UpdateNode};
+use iam_writer::db::nodes::{MoveNode, NewNode, UpdateNode};
 use iam_writer::error::Error;
 use iam_writer::writer::IamWriter;
 use sqlx::PgPool;

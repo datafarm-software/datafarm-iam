@@ -1,4 +1,4 @@
-pub mod device;
-pub mod grant;
-pub mod node;
-pub mod user;
+pub mod devices;
+pub mod grants;
+pub mod nodes;
+pub mod users;
