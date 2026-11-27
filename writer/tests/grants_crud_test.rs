@@ -126,7 +126,7 @@ async fn test_crud_grant(pool: PgPool) -> Result<(), Box<dyn std::error::Error>>
     let err = writer
         .revoke_grant(non_existent_grant_id)
         .await
-        .expect_err("revoke on non existent should return not found");
+        .expect_err("revoke on non existent should return error");
     assert!(
         matches!(err, Error::NotFound),
         "expected a not-found error, got: {err:?}"
@@ -141,5 +141,14 @@ async fn test_crud_grant(pool: PgPool) -> Result<(), Box<dyn std::error::Error>>
     assert_eq!(grant.role, Role::Member);
     assert_eq!(grant.granted_by, Some(fixtures::user::DF_USER));
     assert_eq!(grant.expires_at, Some(expiry_date));
+    //Revoke on already revoked returns Conflict
+    let err = writer
+        .revoke_grant(&grant_id)
+        .await
+        .expect_err("revoke on already revoked should return error");
+    assert!(
+        matches!(err, Error::Conflict(_)),
+        "expected a conflict error, got: {err:?}"
+    );
     Ok(())
 }

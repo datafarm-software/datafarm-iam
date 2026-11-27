@@ -139,6 +139,18 @@ impl IamWriter {
     }
 
     pub async fn revoke_grant(&self, grant_id: &Uuid) -> Result<Grant, Error> {
+        let revoked_at: Option<DateTime<Utc>> =
+            sqlx::query_scalar("SELECT revoked_at FROM iam.grants WHERE id = $1")
+                .bind(grant_id)
+                .fetch_one(&self.pool)
+                .await
+                .map_err(|e| match e {
+                    sqlx::Error::RowNotFound => Error::NotFound,
+                    other => Error::Database(other),
+                })?;
+        if revoked_at.is_some() {
+            return Err(Error::Conflict("grant already revoked"));
+        }
         match sqlx::query_as::<_, Grant>(
             "UPDATE iam.grants
             SET revoked_at = $1
