@@ -12,13 +12,13 @@ use uuid::uuid;
 )]
 async fn test_crud_node(pool: PgPool) -> Result<(), Box<dyn std::error::Error>> {
     let writer = IamWriter::new(common::login_to_pool(&pool, "iam_writer").await).await?;
-    //Retrieve non existent node returns Database Not Found
+    //Retrieve non existent node returns Not Found
     let err = writer
         .get_node(&uuid!("12340000-0000-0000-0000-000000000001"))
         .await
         .expect_err("node should not exist");
     assert!(
-        matches!(err, Error::Database(sqlx::Error::RowNotFound)),
+        matches!(err, Error::NotFound),
         "expected a not-found error, got: {err:?}"
     );
     //Create
@@ -27,10 +27,24 @@ async fn test_crud_node(pool: PgPool) -> Result<(), Box<dyn std::error::Error>> 
             parent_id: Some(fixtures::node::CLIENT_A),
             name: sub_division::node::SUB_DIVISION_NAME.to_owned(),
             tags: vec![sub_division::node::SUB_DIVISION_TAG.to_owned()],
-            keycloak_org_id: None,
+            keycloak_org_id: Some("org id".to_owned()),
         })
         .await
         .expect("insert should return node id");
+    // Duplicate org id returns conflict. Some(org_id) signifies org root node.
+    let err = writer
+        .insert_node(&NewNode {
+            parent_id: Some(fixtures::node::CLIENT_B),
+            name: "Some New Name".to_owned(),
+            tags: vec![sub_division::node::SUB_DIVISION_TAG.to_owned()],
+            keycloak_org_id: Some("org id".to_owned()),
+        })
+        .await
+        .expect_err("duplicate org id should return err");
+    assert!(
+        matches!(err, Error::Conflict(_)),
+        "expected conflict, got {err:?}"
+    );
     //Retrieve
     let node = writer
         .get_node(&node_id)
