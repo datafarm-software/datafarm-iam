@@ -31,6 +31,15 @@ async fn test_crud_grant(pool: PgPool) -> Result<(), Box<dyn std::error::Error>>
         matches!(err, Error::NotFound),
         "expected a not-found error, got: {err:?}"
     );
+    // Non Existent Grant
+    let err = writer
+        .get_grant(&sub_division::node::SUB_DIVISION)
+        .await
+        .expect_err("should throw error not found");
+    assert!(
+        matches!(err, Error::NotFound),
+        "expected a not-found error, got: {err:?}"
+    );
 
     //Create
     let grant_id = writer

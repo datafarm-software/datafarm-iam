@@ -73,14 +73,18 @@ impl IamWriter {
     }
 
     pub async fn get_grant(&self, grant_id: &Uuid) -> Result<Grant, Error> {
-        let grant = sqlx::query_as::<_, Grant>(
+        match sqlx::query_as::<_, Grant>(
             "SELECT id, user_id, node_id, role, granted_by, granted_at, expires_at, revoked_at
             FROM iam.grants WHERE id = $1",
         )
         .bind(grant_id)
         .fetch_one(&self.pool)
-        .await?;
-        Ok(grant)
+        .await
+        {
+            Ok(grant) => Ok(grant),
+            Err(sqlx::Error::RowNotFound) => Err(Error::NotFound),
+            Err(e) => Err(Error::Database(e)),
+        }
     }
 
     pub async fn get_user_grants(&self, user_id: &Uuid) -> Result<Vec<Grant>, Error> {
