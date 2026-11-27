@@ -6,4 +6,3 @@ pub struct Grant {
     pub role: &'static str,
     pub granted_by: Option<Uuid>,
 }
-
