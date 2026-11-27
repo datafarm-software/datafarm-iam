@@ -102,7 +102,12 @@ impl IamWriter {
         )
         .bind(node_id)
         .fetch_one(&self.pool)
-        .await?;
+        .await
+        .map_err(|e| match e {
+            sqlx::Error::RowNotFound => Error::NotFound,
+            other => Error::Database(other),
+        })?;
+
         Ok(node)
     }
 }
