@@ -58,7 +58,7 @@ pub struct Grant {
 
 impl IamWriter {
     pub async fn grant_user_access(&self, g: &NewGrant<'_>) -> Result<Uuid, Error> {
-        let grant_id = sqlx::query_scalar(
+        sqlx::query_scalar(
             "INSERT INTO iam.grants (user_id, node_id, role, granted_by)\
         VALUES ($1, $2, $3, $4)
         RETURNING id",
@@ -68,8 +68,14 @@ impl IamWriter {
         .bind(g.role)
         .bind(g.granted_by)
         .fetch_one(&self.pool)
-        .await?;
-        Ok(grant_id)
+        .await
+        .map_err(|e| match e {
+            sqlx::Error::Database(db) if db.is_unique_violation() => {
+                Error::Conflict("an active grant for this user, node and role exists")
+            }
+            sqlx::Error::Database(db) if db.is_foreign_key_violation() => Error::NotFound,
+            other => Error::Database(other),
+        })
     }
 
     pub async fn get_grant(&self, grant_id: &Uuid) -> Result<Grant, Error> {

@@ -51,6 +51,21 @@ async fn test_crud_grant(pool: PgPool) -> Result<(), Box<dyn std::error::Error>>
             expires_at: None,
         })
         .await?;
+    //Duplication returns Conflict
+    let err = writer
+        .grant_user_access(&NewGrant {
+            user_id: &fixtures::user::TOM,
+            node_id: &fixtures::node::CLIENT_B,
+            role: Role::Member,
+            granted_by: Some(&fixtures::user::DF_USER),
+            expires_at: None,
+        })
+        .await
+        .expect_err("duplicate grant should throw conflict");
+    assert!(
+        matches!(err, Error::Conflict(_)),
+        "expected a conflict error, got: {err:?}"
+    );
 
     //Read
     let grant = writer
