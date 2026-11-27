@@ -34,5 +34,12 @@ async fn test_crud_grant(pool: PgPool) -> Result<(), Box<dyn std::error::Error>>
     assert_eq!(grant.granted_by, Some(fixtures::user::DF_USER));
     assert_eq!(grant.expires_at, None);
     assert_eq!(grant.revoked_at, None);
+
+    let user_grants = writer
+        .get_user_grants(&fixtures::user::TOM)
+        .await
+        .expect("should return vec grants");
+    // Tom should now have two grants. One for Client A, one for Client B.
+    assert_eq!(user_grants.len(), 2);
     Ok(())
 }

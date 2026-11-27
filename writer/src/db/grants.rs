@@ -82,4 +82,15 @@ impl IamWriter {
         .await?;
         Ok(grant)
     }
+
+    pub async fn get_user_grants(&self, user_id: &Uuid) -> Result<Vec<Grant>, Error> {
+        let grants = sqlx::query_as::<_, Grant>(
+            "SELECT id, user_id, node_id, role, granted_by, granted_at, expires_at, revoked_at
+            FROM iam.grants WHERE user_id = $1",
+        )
+        .bind(user_id)
+        .fetch_all(&self.pool)
+        .await?;
+        Ok(grants)
+    }
 }
