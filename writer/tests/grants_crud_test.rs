@@ -1,6 +1,7 @@
 mod common;
+use chrono::{DateTime, Duration, NaiveDate, TimeZone, Utc};
 use common::*;
-use iam_writer::db::grants::{NewGrant, Role};
+use iam_writer::db::grants::{NewGrant, Role, UpdateGrant};
 use iam_writer::error::Error;
 use iam_writer::writer::IamWriter;
 use sqlx::PgPool;
@@ -11,11 +12,12 @@ use uuid::uuid;
     fixtures("nodes", "users", "grants", "devices")
 )]
 async fn test_crud_grant(pool: PgPool) -> Result<(), Box<dyn std::error::Error>> {
+    let non_existent_grant_id = &uuid!("00000000-0000-0000-0000-000000000009");
     let writer = IamWriter::new(common::login_to_pool(&pool, "iam_writer").await).await?;
     //Retrieve non existent returns Not Found
     // Non Existent User
     let err = writer
-        .get_user_grants(&uuid!("00000000-0000-0000-0000-000000000009"))
+        .get_user_grants(non_existent_grant_id)
         .await
         .expect_err("should throw error not found");
     assert!(
@@ -93,5 +95,28 @@ async fn test_crud_grant(pool: PgPool) -> Result<(), Box<dyn std::error::Error>>
         .await
         .expect("should return vec grants");
     assert_eq!(node_grants.len(), 1);
+
+    //Update
+    let naive_dt = NaiveDate::from_ymd_opt(2030, 11, 27)
+        .expect("Invalid date")
+        .and_hms_opt(14, 30, 0)
+        .expect("Invalid time");
+    let expiry_date: DateTime<Utc> = naive_dt.and_utc();
+    writer
+        .update_grant(&UpdateGrant {
+            id: &grant_id,
+            expires_at: Some(expiry_date),
+        })
+        .await
+        .expect("update on existing grant should not return error");
+
+    let err = writer
+        .update_grant(&UpdateGrant {
+            id: &non_existent_grant_id,
+            expires_at: None,
+        })
+        .await
+        .expect_err("update on non existent grant should return error");
+    assert!(matches!(err, Error::NotFound));
     Ok(())
 }
