@@ -105,7 +105,7 @@ async fn test_crud_grant(pool: PgPool) -> Result<(), Box<dyn std::error::Error>>
     writer
         .update_grant(&UpdateGrant {
             id: &grant_id,
-            expires_at: Some(expiry_date),
+            expires_at: Some(&expiry_date),
         })
         .await
         .expect("update on existing grant should not return error");
@@ -118,5 +118,22 @@ async fn test_crud_grant(pool: PgPool) -> Result<(), Box<dyn std::error::Error>>
         .await
         .expect_err("update on non existent grant should return error");
     assert!(matches!(err, Error::NotFound));
+
+    //Delete = Revoke
+    let err = writer
+        .revoke_grant(non_existent_grant_id)
+        .await
+        .expect_err("revoke on non existent should return not found");
+    assert!(matches!(err, Error::NotFound));
+
+    let grant = writer
+        .revoke_grant(&grant_id)
+        .await
+        .expect("delete should return grant");
+    assert_eq!(grant.user_id, fixtures::user::TOM);
+    assert_eq!(grant.node_id, fixtures::node::CLIENT_B);
+    assert_eq!(grant.role, Role::Member);
+    assert_eq!(grant.granted_by, Some(fixtures::user::DF_USER));
+    assert_eq!(grant.expires_at, Some(expiry_date));
     Ok(())
 }

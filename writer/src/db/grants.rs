@@ -40,7 +40,7 @@ pub struct NewGrant<'a> {
 pub struct UpdateGrant<'a> {
     pub id: &'a Uuid,
     /// The new expiry. None = never expires (this sets the column to NULL).
-    pub expires_at: Option<DateTime<Utc>>,
+    pub expires_at: Option<&'a DateTime<Utc>>,
 }
 
 /// A full row of iam.grants.
@@ -136,5 +136,17 @@ impl IamWriter {
             1 => Ok(()),
             _ => Err(Error::Conflict("updated more than 1 grant")),
         }
+    }
+
+    pub async fn revoke_grant(&self, grant_id: &Uuid) -> Result<Grant, Error> {
+        let grant = sqlx::query_as::<_, Grant>(
+            "DELETE FROM iam.grants
+            WHERE id = $1
+            RETURNING id, user_id, node_id, role, granted_by, granted_at, expires_at, revoked_at",
+        )
+        .bind(grant_id)
+        .fetch_one(&self.pool)
+        .await?;
+        Ok(grant)
     }
 }
