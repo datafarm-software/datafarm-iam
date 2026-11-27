@@ -1,5 +1,5 @@
 mod common;
-use chrono::{DateTime, Duration, NaiveDate, TimeZone, Utc};
+use chrono::{DateTime, NaiveDate, Utc};
 use common::*;
 use iam_writer::db::grants::{NewGrant, Role, UpdateGrant};
 use iam_writer::error::Error;
@@ -112,7 +112,7 @@ async fn test_crud_grant(pool: PgPool) -> Result<(), Box<dyn std::error::Error>>
 
     let err = writer
         .update_grant(&UpdateGrant {
-            id: &non_existent_grant_id,
+            id: non_existent_grant_id,
             expires_at: None,
         })
         .await

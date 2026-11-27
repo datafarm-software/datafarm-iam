@@ -120,4 +120,17 @@ impl IamWriter {
             Ok(grants)
         }
     }
+
+    pub async fn update_grant(&self, grant: &UpdateGrant<'_>) -> Result<(), Error> {
+        sqlx::query(
+            "UPDATE iam.grants
+            SET expires_at = $1
+            WHERE id = $2",
+        )
+        .bind(grant.expires_at)
+        .bind(grant.id)
+        .execute(&self.pool)
+        .await?;
+        Ok(())
+    }
 }
