@@ -61,7 +61,7 @@ impl IamWriter {
     }
 
     pub async fn update_node(&self, n: &UpdateNode<'_>) -> Result<(), Error> {
-        let user = sqlx::query(
+        sqlx::query(
             "UPDATE iam.nodes
             SET name = COALESCE($2, name),
                 tags = COALESCE($3, tags)
