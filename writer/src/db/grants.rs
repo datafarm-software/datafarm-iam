@@ -84,13 +84,30 @@ impl IamWriter {
     }
 
     pub async fn get_user_grants(&self, user_id: &Uuid) -> Result<Vec<Grant>, Error> {
-        let grants = sqlx::query_as::<_, Grant>(
+        self.get_attached_grants("user_id", user_id).await
+    }
+
+    pub async fn get_node_grants(&self, node_id: &Uuid) -> Result<Vec<Grant>, Error> {
+        self.get_attached_grants("node_id", node_id).await
+    }
+
+    pub async fn get_attached_grants(
+        &self,
+        query_filter: &str,
+        id: &Uuid,
+    ) -> Result<Vec<Grant>, Error> {
+        let query = format!(
             "SELECT id, user_id, node_id, role, granted_by, granted_at, expires_at, revoked_at
-            FROM iam.grants WHERE user_id = $1",
-        )
-        .bind(user_id)
-        .fetch_all(&self.pool)
-        .await?;
-        Ok(grants)
+            FROM iam.grants WHERE {query_filter} = $1"
+        );
+        let grants = sqlx::query_as::<_, Grant>(sqlx::AssertSqlSafe(query))
+            .bind(id)
+            .fetch_all(&self.pool)
+            .await?;
+        if grants.is_empty() {
+            Err(Error::NotFound)
+        } else {
+            Ok(grants)
+        }
     }
 }

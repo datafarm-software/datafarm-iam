@@ -1,8 +1,10 @@
 mod common;
 use common::*;
 use iam_writer::db::grants::{NewGrant, Role};
+use iam_writer::error::Error;
 use iam_writer::writer::IamWriter;
 use sqlx::PgPool;
+use uuid::uuid;
 
 #[sqlx::test(
     migrations = "../migrations",
@@ -11,6 +13,25 @@ use sqlx::PgPool;
 async fn test_crud_grant(pool: PgPool) -> Result<(), Box<dyn std::error::Error>> {
     let writer = IamWriter::new(common::login_to_pool(&pool, "iam_writer").await).await?;
     //Retrieve non existent returns Not Found
+    // Non Existent User
+    let err = writer
+        .get_user_grants(&uuid!("00000000-0000-0000-0000-000000000009"))
+        .await
+        .expect_err("should throw error not found");
+    assert!(
+        matches!(err, Error::NotFound),
+        "expected a not-found error, got: {err:?}"
+    );
+    // Non Existent Node
+    let err = writer
+        .get_user_grants(&sub_division::node::SUB_DIVISION)
+        .await
+        .expect_err("should throw error not found");
+    assert!(
+        matches!(err, Error::NotFound),
+        "expected a not-found error, got: {err:?}"
+    );
+
     //Create
     let grant_id = writer
         .grant_user_access(&NewGrant {
@@ -41,5 +62,12 @@ async fn test_crud_grant(pool: PgPool) -> Result<(), Box<dyn std::error::Error>>
         .expect("should return vec grants");
     // Tom should now have two grants. One for Client A, one for Client B.
     assert_eq!(user_grants.len(), 2);
+
+    // Tom's grant on Client_B
+    let node_grants = writer
+        .get_node_grants(&fixtures::node::CLIENT_B)
+        .await
+        .expect("should return vec grants");
+    assert_eq!(node_grants.len(), 1);
     Ok(())
 }
