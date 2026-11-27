@@ -117,14 +117,20 @@ async fn test_crud_grant(pool: PgPool) -> Result<(), Box<dyn std::error::Error>>
         })
         .await
         .expect_err("update on non existent grant should return error");
-    assert!(matches!(err, Error::NotFound));
+    assert!(
+        matches!(err, Error::NotFound),
+        "expected a not-found error, got: {err:?}"
+    );
 
     //Delete = Revoke
     let err = writer
         .revoke_grant(non_existent_grant_id)
         .await
         .expect_err("revoke on non existent should return not found");
-    assert!(matches!(err, Error::NotFound));
+    assert!(
+        matches!(err, Error::NotFound),
+        "expected a not-found error, got: {err:?}"
+    );
 
     let grant = writer
         .revoke_grant(&grant_id)

@@ -139,14 +139,20 @@ impl IamWriter {
     }
 
     pub async fn revoke_grant(&self, grant_id: &Uuid) -> Result<Grant, Error> {
-        let grant = sqlx::query_as::<_, Grant>(
-            "DELETE FROM iam.grants
-            WHERE id = $1
+        match sqlx::query_as::<_, Grant>(
+            "UPDATE iam.grants
+            SET revoked_at = $1
+            WHERE id = $2
             RETURNING id, user_id, node_id, role, granted_by, granted_at, expires_at, revoked_at",
         )
+        .bind(chrono::Utc::now())
         .bind(grant_id)
         .fetch_one(&self.pool)
-        .await?;
-        Ok(grant)
+        .await
+        {
+            Ok(grant) => Ok(grant),
+            Err(sqlx::Error::RowNotFound) => Err(Error::NotFound),
+            Err(e) => Err(Error::Database(e)),
+        }
     }
 }
