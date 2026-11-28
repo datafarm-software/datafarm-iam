@@ -83,24 +83,14 @@ impl IamWriter {
         Ok(())
     }
 
-    pub async fn move_node(&self, n: &MoveNode<'_>) -> Result<Node, Error> {
-        let mut tx = self.pool.begin().await?;
+    pub async fn move_node(&self, n: &MoveNode<'_>) -> Result<(), Error> {
         sqlx::query("SELECT iam.move_node($1, $2)")
             .bind(n.id)
             .bind(n.parent_id)
-            .execute(&mut *tx)
+            .execute(&self.pool)
             .await?;
-        let node = sqlx::query_as::<_, Node>(
-            "SELECT id, parent_id, path::text AS path, name, tags, keycloak_org_id, created_at
-           FROM iam.nodes
-          WHERE id = $1",
-        )
-        .bind(n.id)
-        .fetch_one(tx.as_mut())
-        .await?;
         // TODO: insert the 'node.move' audit row here, through tx.as_mut()
-        tx.commit().await?;
-        Ok(node)
+        Ok(())
     }
 
     pub async fn get_node(&self, node_id: &Uuid) -> Result<Node, Error> {
