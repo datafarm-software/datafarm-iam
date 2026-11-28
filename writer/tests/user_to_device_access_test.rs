@@ -18,7 +18,7 @@ async fn test_access_restrictions(pool: PgPool) -> Result<(), Box<dyn std::error
     let writer = IamWriter::new(common::login_to_pool(&pool, "iam_writer").await).await?;
     let reader = IamReader::new(common::login_to_pool(&pool, "iam_reader").await).await?;
     // Create Sub Division's node
-    let node_id = writer
+    let node = writer
         .insert_node(&NewNode {
             parent_id: Some(fixtures::node::CLIENT_A),
             name: sub_division::node::SUB_DIVISION_NAME.to_owned(),
@@ -32,7 +32,7 @@ async fn test_access_restrictions(pool: PgPool) -> Result<(), Box<dyn std::error
         .insert_user(&NewUser {
             keycloak_sub: sub_division::user::DAN_SUB.to_owned(),
             email: sub_division::user::DAN_EMAIL.to_owned(),
-            home_node_id: node_id,
+            home_node_id: node.id,
         })
         .await?;
 
@@ -40,7 +40,7 @@ async fn test_access_restrictions(pool: PgPool) -> Result<(), Box<dyn std::error
     writer
         .move_device(&Device {
             device_id: fixtures::device::DEV_1001.to_owned(),
-            node_id,
+            node_id: node.id,
         })
         .await?;
 
@@ -68,7 +68,7 @@ async fn test_access_restrictions(pool: PgPool) -> Result<(), Box<dyn std::error
     writer
         .grant_user_access(&NewGrant {
             user_id: &user_id,
-            node_id: &node_id,
+            node_id: &node.id,
             role: Role::Member,
             granted_by: Some(&fixtures::user::DF_USER),
             expires_at: None,

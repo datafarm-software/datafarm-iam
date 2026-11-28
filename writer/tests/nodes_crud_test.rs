@@ -44,13 +44,13 @@ async fn test_crud_node(pool: PgPool) -> Result<(), Box<dyn std::error::Error>> 
     );
     {
         //Retrieve
-        let node = writer
+        let get_node = writer
             .get_node(&node.id)
             .await
             .expect("get should return node");
-        assert_eq!(node.id, node_id);
-        assert_eq!(node.parent_id, Some(fixtures::node::CLIENT_A));
-        assert_eq!(node.name, sub_division::node::SUB_DIVISION_NAME);
+        assert_eq!(&get_node.id, &node.id);
+        assert_eq!(get_node.parent_id, Some(fixtures::node::CLIENT_A));
+        assert_eq!(get_node.name, sub_division::node::SUB_DIVISION_NAME);
         assert_eq!(
             node.tags,
             vec![sub_division::node::SUB_DIVISION_TAG.to_owned()]
@@ -61,7 +61,7 @@ async fn test_crud_node(pool: PgPool) -> Result<(), Box<dyn std::error::Error>> 
                 fixtures::node::DATAFARM,
                 fixtures::node::COMPANY_A,
                 fixtures::node::CLIENT_A,
-                node.id.clone(),
+                node.id,
             ])
         );
     }
@@ -86,12 +86,12 @@ async fn test_crud_node(pool: PgPool) -> Result<(), Box<dyn std::error::Error>> 
         .await
         .expect("move should return new path");
     assert_eq!(
-        move_node.path,
+        path,
         fixtures::ltree_path(&[
             fixtures::node::DATAFARM,
             fixtures::node::COMPANY_A,
             fixtures::node::CLIENT_B,
-            node.id.clone(),
+            node.id,
         ])
     );
     Ok(())
