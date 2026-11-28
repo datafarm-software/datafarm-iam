@@ -61,6 +61,7 @@ impl IamWriter {
             sqlx::Error::Database(db) if db.is_unique_violation() => {
                 Error::Conflict("an active grant for this user, node and role exists")
             }
+            sqlx::Error::Database(db) if db.is_check_violation() => Error::NodeLimit,
             sqlx::Error::Database(db) if db.is_foreign_key_violation() => Error::NotFound,
             other => Error::Database(other),
         })?;
