@@ -9,7 +9,7 @@ use uuid::{Uuid, uuid};
 /// Tree: DataFarm -> CompanyA -> ClientA
 pub mod node {
     use super::*;
-    pub const SUB_DIVISION: Uuid = uuid!("00000000-0000-0000-0000-000000000004");
+    pub const SUB_DIVISION: Uuid = uuid!("00000000-0000-0000-0000-000000000009");
     pub const SUB_DIVISION_NAME: &str = "Sub-Division";
     pub const SUB_DIVISION_TAG: &str = "sub-division";
 }

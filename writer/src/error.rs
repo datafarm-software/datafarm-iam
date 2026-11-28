@@ -9,6 +9,9 @@ pub enum Error {
     #[error("not found")]
     NotFound,
 
+    #[error("node limit reached")]
+    NodeLimit,
+
     #[error("conflict: {0}")]
     Conflict(&'static str),
 }

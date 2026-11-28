@@ -6,10 +6,7 @@ use iam_writer::writer::IamWriter;
 use sqlx::PgPool;
 use uuid::uuid;
 
-#[sqlx::test(
-    migrations = "../migrations",
-    fixtures("nodes", "users", "grants", "devices")
-)]
+#[sqlx::test(migrations = "../migrations", fixtures("nodes"))]
 async fn test_crud_node(pool: PgPool) -> Result<(), Box<dyn std::error::Error>> {
     let writer = IamWriter::new(common::login_to_pool(&pool, "iam_writer").await).await?;
     //Retrieve non existent node returns Not Found
@@ -95,6 +92,26 @@ async fn test_crud_node(pool: PgPool) -> Result<(), Box<dyn std::error::Error>> 
             fixtures::node::CLIENT_B,
             node_id,
         ])
+    );
+    Ok(())
+}
+
+#[sqlx::test(migrations = "../migrations", fixtures("nodes_limit"))]
+async fn test_crud_node_limit(pool: PgPool) -> Result<(), Box<dyn std::error::Error>> {
+    let writer = IamWriter::new(common::login_to_pool(&pool, "iam_writer").await).await?;
+    //Create
+    let err = writer
+        .insert_node(&NewNode {
+            parent_id: Some(uuid!("00000000-0000-0000-0000-000000000008")),
+            name: sub_division::node::SUB_DIVISION_NAME.to_owned(),
+            tags: vec![sub_division::node::SUB_DIVISION_TAG.to_owned()],
+            keycloak_org_id: Some("valid org id".to_owned()),
+        })
+        .await
+        .expect_err("should not be allowed to create node deeper than level 8");
+    assert!(
+        matches!(err, Error::NodeLimit),
+        "expected a node-limit error, got: {err:?}"
     );
     Ok(())
 }
